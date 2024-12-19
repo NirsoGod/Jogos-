@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #70c5ce;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            background-color: #ffffff;
+            border: 2px solid #000;
+        }
+
+        #score {
+            font-size: 32px;
+            color: #fff;
+            font-weight: bold;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+        }
+
+        #gameOver {
+            font-size: 40px;
+            color: #fff;
+            font-weight: bold;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="score">Pontos: 0</div>
+    <div id="gameOver">Game Over! Pressione R para reiniciar.</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const gameOverDisplay = document.getElementById("gameOver");
+
+        // Definindo o tamanho quadrado para o canvas
+        const canvasSize = 500; // Definindo o tamanho quadrado
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const birdWidth = 30; // Tamanho do pássaro
+        const birdHeight = 30; // Tamanho do pássaro
+        const gravity = 0.6;
+        const jumpStrength = -6;
+
+        let birdY = canvasSize / 2 - birdHeight / 2;
+        let birdVelocity = 0;
+        let birdX = 50;
+
+        let pipes = [];
+        let pipeGap = 150; // Aumentando a distância entre os canos
+        let pipeWidth = 60; // Largura dos canos
+        let pipeSpeed = 1.5; // Velocidade dos canos
+        let score = 0;
+        let gameOver = false;
+
+        // Função para reiniciar o jogo
+        function restartGame() {
+            birdY = canvasSize / 2 - birdHeight / 2;
+            birdVelocity = 0;
+            pipes = [];
+            score = 0;
+            gameOver = false;
+            gameOverDisplay.style.display = "none";
+            scoreDisplay.textContent = `Pontos: ${score}`;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Função para desenhar o pássaro
+        function drawBird() {
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(birdX, birdY, birdWidth, birdHeight);
+        }
+
+        // Função para desenhar os canos
+        function drawPipes() {
+            ctx.fillStyle = "green";
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight); // Cano superior
+                ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvasSize - pipe.bottomY); // Cano inferior
+            });
+        }
+
+        // Função para mover o pássaro
+        function moveBird() {
+            birdVelocity += gravity;
+            birdY += birdVelocity;
+
+            // Impedir que o pássaro saia da tela
+            if (birdY < 0) birdY = 0;
+            if (birdY + birdHeight > canvasSize) birdY = canvasSize - birdHeight;
+        }
+
+        // Função para gerar novos canos
+        function spawnPipes() {
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvasSize - 200) {
+                let topHeight = Math.floor(Math.random() * (canvasSize - pipeGap));
+                let bottomY = topHeight + pipeGap;
+
+                pipes.push({ x: canvasSize, topHeight, bottomY });
+            }
+        }
+
+        // Função para mover os canos
+        function movePipes() {
+            pipes.forEach(pipe => pipe.x -= pipeSpeed);
+            pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0); // Remover canos que saíram da tela
+        }
+
+        // Função para detectar colisão entre o pássaro e os canos
+        function detectCollisions() {
+            for (let i = 0; i < pipes.length; i++) {
+                if (
+                    birdX + birdWidth > pipes[i].x && birdX < pipes[i].x + pipeWidth &&
+                    (birdY < pipes[i].topHeight || birdY + birdHeight > pipes[i].bottomY)
+                ) {
+                    gameOver = true;
+                    gameOverDisplay.style.display = "block";
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Função para atualizar a pontuação
+        function updateScore() {
+            pipes.forEach(pipe => {
+                if (pipe.x + pipeWidth < birdX && !pipe.passed) {
+                    score++;
+                    scoreDisplay.textContent = `Pontos: ${score}`;
+                    pipe.passed = true;
+                }
+            });
+        }
+
+        // Função para desenhar o fundo
+        function drawBackground() {
+            ctx.fillStyle = "#70c5ce";
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+        }
+
+        // Função principal de animação
+        function gameLoop() {
+            if (gameOver) return;
+
+            drawBackground();
+            drawBird();
+            moveBird();
+            spawnPipes();
+            movePipes();
+            drawPipes();
+            updateScore();
+            detectCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Função para fazer o pássaro "voar" quando pressionado
+        function flap() {
+            if (!gameOver) {
+                birdVelocity = jumpStrength;
+            }
+        }
+
+        // Controle de reinício com a tecla "R"
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "r" && gameOver) {
+                restartGame();
+            } else if (event.key === " " || event.key === "ArrowUp") {
+                flap();
+            }
+        });
+
+        // Iniciar o jogo
+        gameLoop();
+    </script>
+
+</body>
+</html>

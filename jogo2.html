@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Pedra, Papel e Tesoura</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .choices {
+            margin-bottom: 20px;
+        }
+
+        .choice {
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            transition: transform 0.2s ease, background-color 0.3s;
+        }
+
+        .choice:hover {
+            background-color: #45a049;
+        }
+
+        .choice:active {
+            transform: scale(1.1);
+        }
+
+        .choiceText {
+            font-size: 2em;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .resultText {
+            font-size: 2.5em;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 1s ease, transform 1s ease;
+        }
+
+        #userChoice, #computerChoice, #winner {
+            font-weight: bold;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .show {
+            opacity: 1;
+        }
+
+        .animateResult {
+            transform: scale(1.5);
+        }
+
+        /* Estilo para quando o jogador perde */
+        .lose {
+            color: red;
+        }
+
+        /* Estilo para quando o jogador ganha */
+        .win {
+            color: green;
+        }
+
+        /* Media Queries para Responsividade */
+        @media (max-width: 768px) {
+            .choice {
+                font-size: 1.1em;
+                padding: 10px 20px;
+            }
+
+            .choiceText, .resultText {
+                font-size: 1.8em;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .choice {
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+
+            .choiceText, .resultText {
+                font-size: 1.5em;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jogo Pedra, Papel e Tesoura</h1>
+        <div class="choices">
+            <button class="choice" id="rock">Pedra</button>
+            <button class="choice" id="paper">Papel</button>
+            <button class="choice" id="scissors">Tesoura</button>
+        </div>
+        <div class="choiceText" id="choiceText">Escolha uma opção!</div>
+        <div class="result">
+            <div id="userChoice" class="choiceText"></div>
+            <div id="computerChoice" class="choiceText"></div>
+            <div id="winner" class="resultText"></div>
+        </div>
+    </div>
+    <script>
+        const choices = ["pedra", "papel", "tesoura"];
+        const choiceText = document.getElementById("choiceText");
+        const userChoiceText = document.getElementById("userChoice");
+        const computerChoiceText = document.getElementById("computerChoice");
+        const winnerText = document.getElementById("winner");
+
+        document.getElementById("rock").addEventListener("click", () => playGame("pedra"));
+        document.getElementById("paper").addEventListener("click", () => playGame("papel"));
+        document.getElementById("scissors").addEventListener("click", () => playGame("tesoura"));
+
+        function playGame(userChoice) {
+            // Mostrar a escolha do usuário com animação
+            choiceText.classList.remove("show");
+            setTimeout(() => {
+                choiceText.textContent = userChoice.toUpperCase();
+                choiceText.classList.add("show");
+            }, 500);
+
+            const computerChoice = choices[Math.floor(Math.random() * 3)];
+            let result = "";
+
+            // Remover qualquer estilo anterior
+            winnerText.classList.remove("win", "lose");
+
+            // Mostrar a escolha do usuário
+            setTimeout(() => {
+                userChoiceText.classList.remove("show");
+                setTimeout(() => {
+                    userChoiceText.textContent = `Sua escolha: ${userChoice.toUpperCase()}`;
+                    userChoiceText.classList.add("show");
+                }, 200);
+            }, 500);
+
+            // Mostrar a escolha do computador
+            setTimeout(() => {
+                computerChoiceText.classList.remove("show");
+                setTimeout(() => {
+                    computerChoiceText.textContent = `Escolha do computador: ${computerChoice.toUpperCase()}`;
+                    computerChoiceText.classList.add("show");
+                }, 200);
+            }, 800);
+
+            // Lógica de resultado
+            setTimeout(() => {
+                if (userChoice === computerChoice) {
+                    result = "Empate!";
+                } else if (
+                    (userChoice === "pedra" && computerChoice === "tesoura") ||
+                    (userChoice === "papel" && computerChoice === "pedra") ||
+                    (userChoice === "tesoura" && computerChoice === "papel")
+                ) {
+                    result = "Você venceu!";
+                    winnerText.classList.add("win"); // Aplica a cor verde para vitória
+                } else {
+                    result = "Você perdeu!";
+                    winnerText.classList.add("lose"); // Aplica a cor vermelha para derrota
+                }
+
+                // Mostrar o resultado com animação
+                winnerText.classList.remove("show");
+                winnerText.classList.remove("animateResult");
+                setTimeout(() => {
+                    winnerText.textContent = result;
+                    winnerText.classList.add("show");
+                    winnerText.classList.add("animateResult");
+                }, 200);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

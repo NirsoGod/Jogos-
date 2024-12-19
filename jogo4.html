@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Cobra (Snake)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        #score {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #gameOver {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #fff;
+            display: none;
+        }
+
+        #gameCanvas {
+            background-color: #222;
+            border: 2px solid #000;
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            #score {
+                font-size: 18px;
+            }
+
+            #gameCanvas {
+                width: 100%;
+                height: 100%;
+            }
+
+            #gameOver {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Pontos: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOver">Game Over! Pressione R para reiniciar.</div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const gameOverDisplay = document.getElementById("gameOver");
+
+        // Tamanho da célula da grade (ajustado para responsividade)
+        const gridSize = 20;
+        let canvasSize = Math.min(window.innerWidth, window.innerHeight) * 0.8; // Tamanho do canvas ajustado à tela
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const gridCount = Math.floor(canvas.width / gridSize);
+
+        let snake = [{ x: Math.floor(gridCount / 2) * gridSize, y: Math.floor(gridCount / 2) * gridSize }];
+        let food = spawnFood();
+        let direction = { x: gridSize, y: 0 };
+        let score = 0;
+        let gameInterval;
+
+        function startGame() {
+            snake = [{ x: Math.floor(gridCount / 2) * gridSize, y: Math.floor(gridCount / 2) * gridSize }];
+            direction = { x: gridSize, y: 0 };
+            score = 0;
+            food = spawnFood();
+            scoreDisplay.textContent = `Pontos: ${score}`;
+            gameOverDisplay.style.display = "none";
+            gameInterval = setInterval(gameLoop, 100);
+        }
+
+        function gameLoop() {
+            moveSnake();
+            if (checkCollision()) {
+                clearInterval(gameInterval);
+                gameOverDisplay.style.display = "block";
+                return;
+            }
+
+            if (checkFoodCollision()) {
+                score++;
+                scoreDisplay.textContent = `Pontos: ${score}`;
+                food = spawnFood();
+            }
+
+            drawGame();
+        }
+
+        function moveSnake() {
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            snake.unshift(head);
+            if (checkFoodCollision()) {
+                // Se a cobra come a comida, não remove a última parte (cobra cresce)
+            } else {
+                snake.pop(); // Remove o último segmento da cobra
+            }
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+
+            // Colisão com as paredes
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                return true;
+            }
+
+            // Colisão com o próprio corpo
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function checkFoodCollision() {
+            const head = snake[0];
+            return head.x === food.x && head.y === food.y;
+        }
+
+        function spawnFood() {
+            let foodX, foodY;
+            do {
+                foodX = Math.floor(Math.random() * gridCount) * gridSize;
+                foodY = Math.floor(Math.random() * gridCount) * gridSize;
+            } while (isFoodOnSnake(foodX, foodY));
+            return { x: foodX, y: foodY };
+        }
+
+        function isFoodOnSnake(x, y) {
+            return snake.some(segment => segment.x === x && segment.y === y);
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar a cobra
+            snake.forEach(segment => {
+                ctx.fillStyle = "#00FF00";
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+            });
+
+            // Desenhar a comida (cor azul)
+            ctx.fillStyle = "#0000FF";
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+        }
+
+        function changeDirection(event) {
+            switch (event.key) {
+                case "ArrowUp":
+                    if (direction.y === 0) direction = { x: 0, y: -gridSize }; break;
+                case "ArrowDown":
+                    if (direction.y === 0) direction = { x: 0, y: gridSize }; break;
+                case "ArrowLeft":
+                    if (direction.x === 0) direction = { x: -gridSize, y: 0 }; break;
+                case "ArrowRight":
+                    if (direction.x === 0) direction = { x: gridSize, y: 0 }; break;
+                case "r":
+                    if (gameOverDisplay.style.display === "block") startGame(); break;
+            }
+        }
+
+        document.addEventListener("keydown", changeDirection);
+
+        startGame();
+    </script>
+</body>
+</html>

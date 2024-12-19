@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card {
+            width: 100px;
+            height: 100px;
+            background: #007bff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 5px;
+            user-select: none;
+        }
+        .flipped {
+            background: white;
+            color: #007bff;
+            pointer-events: none;
+        }
+        .message {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .play-again {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="message" id="message"></div>
+    <div class="game-board" id="gameBoard"></div>
+    <button class="play-again" id="playAgain" onclick="startGame()">Jogar Novamente</button>
+
+    <script>
+        const cards = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        let gameCards = [];
+        let gameBoard, firstCard, secondCard, lockBoard, matchedPairs;
+
+        function startGame() {
+            gameCards = [...cards, ...cards];
+            gameCards.sort(() => 0.5 - Math.random());
+            gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            matchedPairs = 0;
+            lockBoard = false;
+            document.getElementById('message').textContent = '';
+            document.getElementById('playAgain').style.display = 'none';
+            gameCards.forEach(createCard);
+        }
+
+        function createCard(value) {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.value = value;
+            card.addEventListener('click', flipCard);
+            gameBoard.appendChild(card);
+        }
+
+        function flipCard() {
+            if (lockBoard || this === firstCard) return;
+
+            this.classList.add('flipped');
+            this.textContent = this.dataset.value;
+
+            if (!firstCard) {
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            checkMatch();
+        }
+
+        function checkMatch() {
+            if (firstCard.dataset.value === secondCard.dataset.value) {
+                matchedPairs++;
+                if (matchedPairs === cards.length) {
+                    document.getElementById('message').textContent = 'Parabéns por Concluir!';
+                    document.getElementById('playAgain').style.display = 'inline-block';
+                }
+                resetCards(true);
+            } else {
+                lockBoard = true;
+                setTimeout(() => resetCards(false), 1000);
+            }
+        }
+
+        function resetCards(match) {
+            if (!match) {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                firstCard.textContent = '';
+                secondCard.textContent = '';
+            }
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

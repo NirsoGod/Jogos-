@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .cell.clicked {
+            cursor: not-allowed;
+        }
+
+        .result {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .reset-btn, .reset-score-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .reset-btn:hover, .reset-score-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .cell {
+                font-size: 1.5em;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cell {
+                font-size: 1.2em;
+                width: 80px;
+                height: 80px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+
+        /* Placar */
+        .score {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .line {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 2px solid transparent;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jogo da Velha</h1>
+        <div class="score">
+            <p>Jogador X: <span id="scoreX">0</span> | Jogador O: <span id="scoreO">0</span></p>
+        </div>
+        <div class="board" id="board"></div>
+        <div class="result" id="result"></div>
+        <button class="reset-btn" id="resetBtn">Reiniciar Jogo</button>
+        <button class="reset-score-btn" id="resetScoreBtn">Zerar Placar</button>
+    </div>
+
+    <script>
+        const board = document.getElementById("board");
+        const resultDisplay = document.getElementById("result");
+        const resetBtn = document.getElementById("resetBtn");
+        const resetScoreBtn = document.getElementById("resetScoreBtn");
+        const scoreX = document.getElementById("scoreX");
+        const scoreO = document.getElementById("scoreO");
+
+        let currentPlayer = "X";
+        let gameBoard = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+        let playerXScore = 0;
+        let playerOScore = 0;
+
+        function createBoard() {
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement("div");
+                cell.classList.add("cell");
+                cell.setAttribute("data-index", i);
+                cell.addEventListener("click", handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(event) {
+            const cell = event.target;
+            const index = cell.getAttribute("data-index");
+
+            // Se a célula já foi clicada ou o jogo acabou, não faça nada
+            if (gameBoard[index] !== "" || !gameActive) return;
+
+            // Marcar a célula com o jogador atual
+            gameBoard[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add("clicked");
+
+            // Verificar se há vencedor
+            if (checkWinner()) {
+                resultDisplay.textContent = `${currentPlayer} venceu!`;
+                resultDisplay.style.color = "green";
+                if (currentPlayer === "X") {
+                    playerXScore++;
+                } else {
+                    playerOScore++;
+                }
+                updateScore();
+                drawWinningLine();
+                gameActive = false;
+                return;
+            }
+
+            // Verificar se há empate
+            if (!gameBoard.includes("")) {
+                resultDisplay.textContent = "Empate!";
+                resultDisplay.style.color = "orange";
+                gameActive = false;
+                return;
+            }
+
+            // Trocar o jogador
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+        }
+
+        function checkWinner() {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            for (let combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    winningCombination = combination;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateScore() {
+            scoreX.textContent = playerXScore;
+            scoreO.textContent = playerOScore;
+        }
+
+        function drawWinningLine() {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            const combination = winningCombinations.find(combination => {
+                const [a, b, c] = combination;
+                return gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c];
+            });
+
+            if (!combination) return;
+
+            const [a, b, c] = combination;
+            const cells = document.querySelectorAll(".cell");
+            const x1 = cells[a].offsetLeft + cells[a].offsetWidth / 2;
+            const y1 = cells[a].offsetTop + cells[a].offsetHeight / 2;
+            const x2 = cells[c].offsetLeft + cells[c].offsetWidth / 2;
+            const y2 = cells[c].offsetTop + cells[c].offsetHeight / 2;
+
+            const line = document.createElement("div");
+            line.classList.add("line");
+            line.style.left = `${x1}px`;
+            line.style.top = `${y1}px`;
+            line.style.width = `${Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))}px`;
+            line.style.transform = `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)`;
+
+            board.appendChild(line);
+        }
+
+        function resetGame() {
+            gameBoard = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X";
+            gameActive = true;
+            resultDisplay.textContent = "";
+            const cells = document.querySelectorAll(".cell");
+            cells.forEach(cell => {
+                cell.textContent = "";
+                cell.classList.remove("clicked");
+            });
+            const lines = document.querySelectorAll(".line");
+            lines.forEach(line => line.remove());
+        }
+
+        // Função para zerar o placar
+        function resetScore() {
+            playerXScore = 0;
+            playerOScore = 0;
+            updateScore();
+        }
+
+        // Iniciar o jogo
+        createBoard();
+
+        // Adicionar funcionalidade de reiniciar
+        resetBtn.addEventListener("click", resetGame);
+
+        // Adicionar funcionalidade de zerar placar
+        resetScoreBtn.addEventListener("click", resetScore);
+    </script>
+</body>
+</html>
